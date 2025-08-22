@@ -171,6 +171,115 @@ const DestinationsManager = () => {
         )}
       </div>
 
+      {/* Add Destination Form */}
+      {showForm && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-black">
+            Create New Destination
+          </h2>
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Destination Name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              required
+            />
+            <select
+              value={formData.state}
+              onChange={(e) =>
+                setFormData({ ...formData, state: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              required
+            >
+              <option value="">Select State/UT</option>
+              {indianStates.map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+            <textarea
+              placeholder="Description"
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              rows={3}
+              required
+            />
+            <input
+              type="text"
+              placeholder="Best Time to Visit"
+              value={formData.bestTimeToVisit}
+              onChange={(e) =>
+                setFormData({ ...formData, bestTimeToVisit: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            />
+            <input
+              type="text"
+              placeholder="Average Budget"
+              value={formData.averageBudget}
+              onChange={(e) =>
+                setFormData({ ...formData, averageBudget: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            />
+            <textarea
+              placeholder="Travel Tips"
+              value={formData.travelTips}
+              onChange={(e) =>
+                setFormData({ ...formData, travelTips: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              rows={2}
+            />
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-black mb-2">
+                Destination Images (Multiple)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setSelectedImages(Array.from(e.target.files));
+                  }
+                }}
+                className="border rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              />
+              {selectedImages.length > 0 && (
+                <p className="text-sm text-black mt-1">
+                  {selectedImages.length} image(s) selected
+                </p>
+              )}
+            </div>
+            <div className="col-span-2 flex gap-4">
+              <button
+                type="submit"
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Create Destination
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-md">
         <div className="p-6 border-b">
           <h2 className="text-xl font-semibold text-black">
