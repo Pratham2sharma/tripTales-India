@@ -14,6 +14,45 @@ interface Destination {
   state: string;
 }
 
+const indianStates = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Delhi",
+  "Jammu & Kashmir",
+  "Ladakh",
+  "Puducherry",
+  "Andaman & Nicobar",
+  "Chandigarh",
+  "Dadra & Nagar Haveli",
+  "Lakshadweep",
+];
+
 export default function StatePage() {
   const params = useParams();
   const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -21,17 +60,37 @@ export default function StatePage() {
   const [error, setError] = useState<string | null>(null);
 
   const stateSlug = params.state as string;
-  const stateName = stateSlug
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
-    .replace("And", "&");
+
+  // Helper to convert slug to state name
+  function slugToStateName(slug: string) {
+    // Convert slug to lower case and compare with all states
+    const formatted = slug.replace(/-/g, " ").toLowerCase();
+    return (
+      indianStates.find(
+        (state) =>
+          state
+            .toLowerCase()
+            .replace(/&/g, "and")
+            .replace(/\s+/g, " ")
+            .trim() === formatted
+      ) ||
+      // fallback: capitalize words
+      slug
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    );
+  }
+
+  const stateName = slugToStateName(stateSlug);
 
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/destinations/state/${stateName}`
+          `http://localhost:5000/api/destinations/state/${encodeURIComponent(
+            stateName
+          )}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch destinations");
