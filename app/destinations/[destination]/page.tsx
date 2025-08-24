@@ -11,6 +11,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import dynamic from "next/dynamic";
 
 interface Destination {
   _id: string;
@@ -21,7 +22,15 @@ interface Destination {
   bestTimeToVisit: string;
   travelTips: string;
   averageBudget: string;
+  latitude: number;
+  longitude: number;
 }
+
+// Dynamically import the map component outside of the main function
+const Map = dynamic(() => import("../../components/MapComponent"), {
+  ssr: false,
+  loading: () => <p className="text-center text-gray-600">Loading map...</p>,
+});
 
 export default function DestinationPage() {
   const params = useParams();
@@ -169,7 +178,13 @@ export default function DestinationPage() {
                 <h3 className="text-xl font-bold text-gray-800 mb-4">
                   Average Budget
                 </h3>
-                <p className="text-gray-600">{destination.averageBudget}</p>
+                <p className="text-gray-600">
+                  {destination.averageBudget
+                    ?.split(".")
+                    .map((tip, index) =>
+                      tip.trim() ? <li key={index}>{tip.trim()}</li> : null
+                    )}
+                </p>
               </div>
 
               <div className="bg-blue-50 p-6 rounded-lg">
@@ -184,6 +199,20 @@ export default function DestinationPage() {
                     )}
                 </ul>
               </div>
+            </div>
+          </div>
+
+          {/* Map Section */}
+          <div className="mt-16">
+            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+              Location on Map
+            </h2>
+            <div className="rounded-lg overflow-hidden shadow-lg border">
+              <Map
+                lat={destination.latitude}
+                lng={destination.longitude}
+                title={destination.name}
+              />
             </div>
           </div>
         </div>

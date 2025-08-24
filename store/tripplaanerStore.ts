@@ -1,8 +1,14 @@
 import { create } from "zustand";
 
+interface Itinerary {
+  title: string;
+  days: string[];
+  estimated_budget: number;
+}
+
 interface TripPlan {
-  itineraries: string[];
-  rawResponse: string;
+  itineraries: Itinerary[];
+  rawResponse?: string;
 }
 
 interface TripPlannerState {
@@ -10,10 +16,10 @@ interface TripPlannerState {
   error: string | null;
   tripPlan: TripPlan | null;
   generateTripPlan: (formData: {
-    numberOfPeople: string;
-    budget: string;
-    destinations: string;
-    time: string;
+    people: number;
+    budget: number;
+    destination: string;
+    duration: number;
   }) => Promise<void>;
 }
 

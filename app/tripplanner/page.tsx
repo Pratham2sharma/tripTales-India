@@ -8,15 +8,14 @@ import Image from "next/image";
 
 export default function TripPlannerPage() {
   const [formData, setFormData] = useState({
-    numberOfPeople: "",
+    people: "",
+    destination: "",
     budget: "",
-    destinations: "",
-    time: "",
+    duration: "",
   });
 
   const { generateTripPlan, tripPlan, loading, error } = useTripPlannerStore();
 
-  // Add mounted state to avoid hydration mismatch
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -34,7 +33,13 @@ export default function TripPlannerPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await generateTripPlan(formData);
+    // Convert number fields to numbers before sending
+    await generateTripPlan({
+      ...formData,
+      people: Number(formData.people),
+      budget: Number(formData.budget),
+      duration: Number(formData.duration),
+    });
   };
 
   return (
@@ -42,15 +47,17 @@ export default function TripPlannerPage() {
       <Navbar />
 
       {/* Hero Section */}
-
       <section className="relative h-[60vh]">
-        <Image
-          src="/images/trip-planner-banner.jpg"
-          alt="trip-planner TripTales India"
-          fill
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="absolute inset-0">
+          <Image
+            src="/images/trip-planner-banner.jpg"
+            alt="trip-planner TripTales India"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/50"></div>
+        </div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-white text-center">
             <h1 className="text-5xl font-bold mb-4">AI Powered Trip Planner</h1>
@@ -71,18 +78,16 @@ export default function TripPlannerPage() {
                   Plan Your Trip
                 </h2>
 
-                {/* Only render form/results after mount */}
                 {mounted && (
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Form fields */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Number of People
                       </label>
                       <input
                         type="number"
-                        name="numberOfPeople"
-                        value={formData.numberOfPeople}
+                        name="people"
+                        value={formData.people}
                         onChange={handleInputChange}
                         min="1"
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -109,15 +114,15 @@ export default function TripPlannerPage() {
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Desired Destinations
+                        Desired Destination
                       </label>
                       <textarea
-                        name="destinations"
-                        value={formData.destinations}
+                        name="destination"
+                        value={formData.destination}
                         onChange={handleInputChange}
                         rows={3}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter destinations you want to visit"
+                        placeholder="e.g., Goa, Rishikesh, or Kerala Backwaters"
                         required
                       />
                     </div>
@@ -128,8 +133,8 @@ export default function TripPlannerPage() {
                       </label>
                       <input
                         type="number"
-                        name="time"
-                        value={formData.time}
+                        name="duration"
+                        value={formData.duration}
                         onChange={handleInputChange}
                         min="1"
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -140,45 +145,60 @@ export default function TripPlannerPage() {
 
                     <button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105"
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? "Generating..." : "Generate Trip Plan"}
                     </button>
                   </form>
                 )}
 
-                {/* Results */}
                 {mounted && error && (
                   <p className="text-red-500 mt-4 text-center">{error}</p>
                 )}
 
-                {mounted && tripPlan && (
-                  <div className="mt-8 p-6 bg-gray-100 rounded-lg">
-                    <h3 className="text-xl font-bold mb-4 text-gray-800">
-                      Suggested Itineraries
-                    </h3>
-                    <ul className="space-y-6">
-                      {tripPlan.itineraries.map((itinerary, idx) => (
-                        <li key={idx} className="text-gray-700 border-b pb-4">
-                          <div className="font-semibold text-lg mb-1">
-                            {itinerary.title}
-                          </div>
-                          <div className="mb-1">
-                            <span className="font-medium">
-                              Estimated Budget:
-                            </span>{" "}
-                            ₹{itinerary.estimated_budget}
-                          </div>
-                          <ul className="list-disc pl-6">
-                            {itinerary.days.map((day, dayIdx) => (
-                              <li key={dayIdx}>{day}</li>
-                            ))}
-                          </ul>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {mounted &&
+                  !!tripPlan?.itineraries &&
+                  tripPlan.itineraries.length > 0 && (
+                    <div className="mt-8 p-6 bg-gray-100 rounded-lg">
+                      <h3 className="text-xl font-bold mb-4 text-gray-800">
+                        Suggested Itineraries
+                      </h3>
+                      <ul className="space-y-6">
+                        {tripPlan.itineraries.map((itinerary, idx) => (
+                          <li
+                            key={`itinerary-${idx}-${
+                              itinerary.title || "untitled"
+                            }`}
+                            className="text-gray-700 border-b pb-4 last:border-b-0"
+                          >
+                            <div className="font-semibold text-lg mb-1">
+                              {itinerary.title || "Untitled"}
+                            </div>
+                            <div className="mb-1">
+                              <span className="font-medium">
+                                Estimated Budget:
+                              </span>{" "}
+                              ₹
+                              {typeof itinerary.estimated_budget === "number"
+                                ? itinerary.estimated_budget.toLocaleString(
+                                    "en-IN"
+                                  )
+                                : "N/A"}
+                            </div>
+                            <ul className="list-disc pl-6 space-y-1">
+                              {Array.isArray(itinerary.days) &&
+                                itinerary.days.map(
+                                  (day: string, dayIdx: number) => (
+                                    <li key={`day-${idx}-${dayIdx}`}>{day}</li>
+                                  )
+                                )}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
               </CardContent>
             </Card>
           </div>

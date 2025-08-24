@@ -22,6 +22,8 @@ interface Destination {
   bestTimeToVisit: string;
   travelTips: string;
   averageBudget: string;
+  latitude: number;
+  longitude: number;
   createdAt: string;
   updatedAt: string;
 }

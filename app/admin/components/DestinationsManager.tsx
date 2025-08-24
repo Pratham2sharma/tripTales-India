@@ -50,6 +50,8 @@ const DestinationsManager = () => {
     bestTimeToVisit: "",
     averageBudget: "",
     travelTips: "",
+    latitude: "",
+    longitude: "",
   });
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
@@ -79,6 +81,8 @@ const DestinationsManager = () => {
     bestTimeToVisit: "",
     averageBudget: "",
     travelTips: "",
+    latitude: "",
+    longitude: "",
   });
   const [editSelectedImages, setEditSelectedImages] = useState<File[]>([]);
 
@@ -114,6 +118,8 @@ const DestinationsManager = () => {
     const createData = {
       ...formData,
       images: base64Images,
+      latitude: Number(formData.latitude),
+      longitude: Number(formData.longitude),
     };
 
     await createDestination(createData);
@@ -125,6 +131,8 @@ const DestinationsManager = () => {
       bestTimeToVisit: "",
       averageBudget: "",
       travelTips: "",
+      latitude: "",
+      longitude: "",
     });
     setSelectedImages([]);
   };
@@ -261,6 +269,28 @@ const DestinationsManager = () => {
                 </p>
               )}
             </div>
+            <input
+              type="number"
+              placeholder="Latitude"
+              value={formData.latitude}
+              onChange={(e) =>
+                setFormData({ ...formData, latitude: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              step="any"
+              required
+            />
+            <input
+              type="number"
+              placeholder="Longitude"
+              value={formData.longitude}
+              onChange={(e) =>
+                setFormData({ ...formData, longitude: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              step="any"
+              required
+            />
             <div className="col-span-2 flex gap-4">
               <button
                 type="submit"
@@ -396,6 +426,14 @@ const DestinationsManager = () => {
                         <strong>Travel Tips:</strong>{" "}
                         {selectedDestination.travelTips}
                       </p>
+                      <p>
+                        <strong>Latitude:</strong>{" "}
+                        {selectedDestination.latitude}
+                      </p>
+                      <p>
+                        <strong>Longitude:</strong>{" "}
+                        {selectedDestination.longitude}
+                      </p>
                       {selectedDestination.images &&
                         selectedDestination.images.length > 0 && (
                           <div>
@@ -468,6 +506,8 @@ const DestinationsManager = () => {
                         ) as string,
                         averageBudget: formData.get("averageBudget") as string,
                         travelTips: formData.get("travelTips") as string,
+                        latitude: Number(formData.get("latitude")),
+                        longitude: Number(formData.get("longitude")),
                         ...(base64Images.length > 0 && {
                           images: base64Images,
                         }),
@@ -530,6 +570,24 @@ const DestinationsManager = () => {
                       defaultValue={selectedDestination.travelTips}
                       className="border rounded-lg px-4 py-2 col-span-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                       rows={2}
+                    />
+                    <input
+                      type="number"
+                      name="latitude"
+                      placeholder="Latitude"
+                      defaultValue={selectedDestination.latitude}
+                      className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                      step="any"
+                      required
+                    />
+                    <input
+                      type="number"
+                      name="longitude"
+                      placeholder="Longitude"
+                      defaultValue={selectedDestination.longitude}
+                      className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                      step="any"
+                      required
                     />
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-black mb-2">
