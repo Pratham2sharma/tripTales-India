@@ -1,6 +1,7 @@
 "use client";
 import useDestinationStore from "@/store/destinationStore";
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 
 const indianStates = [
   "Andhra Pradesh",
@@ -441,14 +442,21 @@ const DestinationsManager = () => {
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
                               {selectedDestination.images.map(
                                 (image, index) => (
-                                  <img
+                                  <div
                                     key={index}
-                                    src={image}
-                                    alt={`${selectedDestination.name} ${
-                                      index + 1
-                                    }`}
-                                    className="w-full h-32 object-cover rounded"
-                                  />
+                                    className="relative w-full h-32"
+                                  >
+                                    <Image
+                                      src={image}
+                                      alt={`${selectedDestination.name} ${
+                                        index + 1
+                                      }`}
+                                      fill
+                                      className="object-cover rounded"
+                                      sizes="(max-width: 768px) 100vw, 33vw"
+                                      priority={index === 0}
+                                    />
+                                  </div>
                                 )
                               )}
                             </div>
