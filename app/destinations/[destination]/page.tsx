@@ -26,6 +26,7 @@ interface Destination {
   longitude: number;
 }
 
+
 // Dynamically import the map component outside of the main function
 const Map = dynamic(() => import("../../components/MapComponent"), {
   ssr: false,
@@ -212,6 +213,7 @@ export default function DestinationPage() {
                 lat={destination.latitude}
                 lng={destination.longitude}
                 title={destination.name}
+                imageUrl={destination.images[0]}
               />
             </div>
           </div>
