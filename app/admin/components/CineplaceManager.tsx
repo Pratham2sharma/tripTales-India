@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import useCineplaceStore from "@/store/cineplaceStore";
 import Image from "next/image";
+import Pagination from "../../components/Pagination";
 
 const indianStates = [
   "Andhra Pradesh",
@@ -42,6 +43,8 @@ const indianStates = [
   "Lakshadweep",
 ];
 
+const ITEMS_PER_PAGE = 5;
+
 const CineplaceManager = () => {
   const [showForm, setShowForm] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "view" | "edit">("list");
@@ -74,6 +77,7 @@ const CineplaceManager = () => {
   });
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [editSelectedImages, setEditSelectedImages] = useState<File[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchCineplaces();
@@ -167,6 +171,14 @@ const CineplaceManager = () => {
       }
     }
   };
+
+  // 4. Pagination logic: Calculate which destinations to show on the current page
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentDestinations = cineplaces.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   return (
     <div>
@@ -400,6 +412,13 @@ const CineplaceManager = () => {
                   ))}
                 </div>
               )}
+
+              <Pagination
+                totalDestinations={cineplaces.length}
+                destinationsPerPage={ITEMS_PER_PAGE}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+              />
 
               {viewMode === "view" && selectedCineplace && (
                 <div className="bg-white rounded-lg p-6">

@@ -2,6 +2,7 @@
 import useDestinationStore from "@/store/destinationStore";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Pagination from "../../components/Pagination";
 
 const indianStates = [
   "Andhra Pradesh",
@@ -41,6 +42,8 @@ const indianStates = [
   "Dadra & Nagar Haveli",
   "Lakshadweep",
 ];
+
+const ITEMS_PER_PAGE = 10;
 
 const DestinationsManager = () => {
   const [showForm, setShowForm] = useState(false);
@@ -86,6 +89,8 @@ const DestinationsManager = () => {
     longitude: "",
   });
   const [editSelectedImages, setEditSelectedImages] = useState<File[]>([]);
+  // 2. Add state for pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchDestinations();
@@ -137,6 +142,14 @@ const DestinationsManager = () => {
     });
     setSelectedImages([]);
   };
+
+  // 4. Pagination logic: Calculate which destinations to show on the current page
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentDestinations = filteredDestinations.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   return (
     <div>
@@ -339,7 +352,7 @@ const DestinationsManager = () => {
             <>
               {viewMode === "list" && (
                 <div className="space-y-4">
-                  {filteredDestinations.map((destination) => (
+                  {currentDestinations.map((destination) => (
                     <div
                       key={destination._id}
                       className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
@@ -385,6 +398,13 @@ const DestinationsManager = () => {
                   ))}
                 </div>
               )}
+
+              <Pagination
+                totalDestinations={filteredDestinations.length}
+                destinationsPerPage={ITEMS_PER_PAGE}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+              />
 
               {viewMode === "view" && selectedDestination && (
                 <div className="bg-white rounded-lg p-6">

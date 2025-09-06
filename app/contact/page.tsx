@@ -49,10 +49,13 @@ export default function ContactPage() {
         <div className="absolute inset-0 bg-black/50"></div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-white text-center">
-            <h1 className="text-5xl font-bold mb-4">Contact Us</h1>
+            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-green-400 bg-clip-text text-transparent">
+              Contact Us
+            </h1>
             <p className="text-xl">
-              We'd love to hear from you. Get in touch with us!
+              We&apos;d love to hear from you. Get in touch with us!
             </p>
+            <div className="mt-8 h-1 w-32 bg-gradient-to-r from-orange-400 to-green-400 mx-auto rounded-full"></div>
           </div>
         </div>
       </section>
@@ -169,8 +172,8 @@ export default function ContactPage() {
                   Get in Touch
                 </h2>
                 <p className="text-gray-600 text-lg mb-8">
-                  Have questions about your next adventure? We're here to help
-                  you plan the perfect trip to India.
+                  Have questions about your next adventure? We&apos;re here to
+                  help you plan the perfect trip to India.
                 </p>
               </div>
 

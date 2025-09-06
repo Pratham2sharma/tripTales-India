@@ -1,10 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTripPlannerStore } from "@/store/tripplaanerStore";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function TripPlannerPage() {
   const [formData, setFormData] = useState({
@@ -42,6 +45,41 @@ export default function TripPlannerPage() {
     });
   };
 
+  // Ref for PDF download
+  const tripPlanRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async () => {
+    if (!tripPlanRef.current) return;
+
+    const element = tripPlanRef.current;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+    const imgY = 10;
+
+    pdf.addImage(
+      imgData,
+      "PNG",
+      imgX,
+      imgY,
+      imgWidth * ratio,
+      imgHeight * ratio
+    );
+    pdf.save("trip-plan.pdf");
+  };
+
   return (
     <div className="bg-white min-h-screen">
       <Navbar />
@@ -60,10 +98,13 @@ export default function TripPlannerPage() {
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-white text-center">
-            <h1 className="text-5xl font-bold mb-4">AI Powered Trip Planner</h1>
+            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-green-400 bg-clip-text text-transparent">
+              AI Powered Trip Planner
+            </h1>
             <p className="text-xl">
               Plan your perfect journey with intelligent recommendations
             </p>
+            <div className="mt-8 h-1 w-32 bg-gradient-to-r from-orange-400 to-green-400 mx-auto rounded-full"></div>
           </div>
         </div>
       </section>
@@ -71,7 +112,7 @@ export default function TripPlannerPage() {
       {/* Form Section */}
       <section className="py-16">
         <div className="container mx-auto px-4 md:px-16 lg:px-24">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             <Card className="shadow-2xl">
               <CardContent className="p-8">
                 <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
@@ -146,7 +187,7 @@ export default function TripPlannerPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-gradient-to-r from-orange-400 to-green-400 mx-auto text-white font-semibold rounded-lg shadow-md  py-3 px-6 hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? "Generating..." : "Generate Trip Plan"}
                     </button>
@@ -160,7 +201,10 @@ export default function TripPlannerPage() {
                 {mounted &&
                   !!tripPlan?.itineraries &&
                   tripPlan.itineraries.length > 0 && (
-                    <div className="mt-8 p-6 bg-gray-100 rounded-lg">
+                    <div
+                      ref={tripPlanRef}
+                      className="mt-8 p-6 bg-gray-100 rounded-lg"
+                    >
                       <h3 className="text-xl font-bold mb-4 text-gray-800">
                         Suggested Itineraries
                       </h3>
@@ -190,13 +234,28 @@ export default function TripPlannerPage() {
                               {Array.isArray(itinerary.days) &&
                                 itinerary.days.map(
                                   (day: string, dayIdx: number) => (
-                                    <li key={`day-${idx}-${dayIdx}`}>{day}</li>
+                                    <li key={`day-${idx}-${dayIdx}`}>
+                                      <ReactMarkdown>{day}</ReactMarkdown>
+                                    </li>
                                   )
                                 )}
                             </ul>
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                {mounted &&
+                  !!tripPlan?.itineraries &&
+                  tripPlan.itineraries.length > 0 && (
+                    <div className="text-center mt-6">
+                      <button
+                        onClick={handleDownloadPdf}
+                        className="px-6 py-2 bg-gradient-to-r from-orange-400 to-green-400 mx-auto text-white font-semibold rounded-lg shadow-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75"
+                      >
+                        Download as PDF
+                      </button>
                     </div>
                   )}
               </CardContent>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
+import Pagination from "../../components/Pagination";
 
 interface Destination {
   _id: string;
@@ -53,11 +54,14 @@ const indianStates = [
   "Lakshadweep",
 ];
 
+const ITEMS_PER_PAGE = 8;
+
 export default function StatePage() {
   const params = useParams();
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const stateSlug = params.state as string;
 
@@ -106,6 +110,14 @@ export default function StatePage() {
 
     fetchDestinations();
   }, [stateName]);
+
+  // 4. Pagination logic: Calculate which destinations to show on the current page
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentDestinations = destinations.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   if (loading) {
     return (
@@ -160,7 +172,7 @@ export default function StatePage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {destinations.map((destination) => {
+            {currentDestinations.map((destination) => {
               const destinationSlug = destination.name
                 .toLowerCase()
                 .replace(/\s+/g, "-");
@@ -195,6 +207,12 @@ export default function StatePage() {
             })}
           </div>
         </div>
+        <Pagination
+          totalDestinations={destinations.length}
+          destinationsPerPage={ITEMS_PER_PAGE}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
       </section>
 
       <Footer />

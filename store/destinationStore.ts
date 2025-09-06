@@ -6,12 +6,12 @@ const API_BASE_URL = "http://localhost:5000/api";
 // Configure axios defaults
 axios.defaults.timeout = 10000; // 10 seconds timeout
 
-interface BasicDestination {
-  _id: string;
-  name: string;
-  description: string;
-  state: string;
-}
+// interface BasicDestination {
+//   _id: string;
+//   name: string;
+//   description: string;
+//   state: string;
+// }
 
 interface Destination {
   _id: string;
@@ -29,7 +29,7 @@ interface Destination {
 }
 
 interface DestinationStore {
-  destinations: BasicDestination[];
+  destinations: Destination[];
   selectedDestination: Destination | null;
   loading: boolean;
   detailLoading: boolean;
@@ -54,7 +54,7 @@ const useDestinationStore = create<DestinationStore>((set, get) => ({
   fetchDestinations: async () => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.get(`${API_BASE_URL}/destinations/basic`);
+      const response = await axios.get(`${API_BASE_URL}/destinations`);
       set({ destinations: response.data, loading: false });
     } catch (error: any) {
       set({
@@ -77,28 +77,18 @@ const useDestinationStore = create<DestinationStore>((set, get) => ({
     }
   },
 
+  // Updated to add the full destination object to the state
   createDestination: async (destinationData: any) => {
     set({ loading: true, error: null });
     try {
       const response = await axios.post(
         `${API_BASE_URL}/destinations`,
         destinationData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
-
-      const basicDestination = {
-        _id: response.data._id,
-        name: response.data.name,
-        description: response.data.description,
-        state: response.data.state,
-      };
-
+      // Add the full new destination to the array
       set((state) => ({
-        destinations: [...state.destinations, basicDestination],
+        destinations: [...state.destinations, response.data],
         loading: false,
       }));
     } catch (error: any) {
@@ -109,29 +99,19 @@ const useDestinationStore = create<DestinationStore>((set, get) => ({
     }
   },
 
+  // Updated to update the state with the full destination object
   updateDestination: async (id: string, destinationData: any) => {
     set({ detailLoading: true, error: null });
     try {
       const response = await axios.put(
         `${API_BASE_URL}/destinations/${id}`,
         destinationData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       set((state) => ({
         destinations: state.destinations.map((dest) =>
-          dest._id === id
-            ? {
-                _id: response.data._id,
-                name: response.data.name,
-                description: response.data.description,
-                state: response.data.state, // <-- Ensure state is included
-              }
-            : dest
+          dest._id === id ? response.data : dest
         ),
         selectedDestination: response.data,
         detailLoading: false,

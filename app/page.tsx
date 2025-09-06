@@ -51,6 +51,7 @@ export default function Home() {
           loop
           muted
           playsInline
+          poster="/images/home-banner.jpg"
         >
           <source src="/videos/banner.mp4" type="video/mp4" />
           Your browser does not support the video tag.
@@ -59,13 +60,17 @@ export default function Home() {
         {/* Content overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-white text-center">
-            <h1 className="text-5xl font-bold">TripTales India</h1>
+            <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-orange-400 to-green-400 bg-clip-text text-transparent">
+              TripTales India
+            </h1>
             <p className="text-2xl font-semibold mt-2">
               Where Every Destination Becomes a Story
             </p>
-            <button className="bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 mt-6">
-              Explore India
-            </button>
+            <Link href="/filter">
+              <button className="bg-gradient-to-r from-orange-400 to-green-400 mx-auto text-white font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 mt-6">
+                Explore India
+              </button>
+            </Link>
           </div>
         </div>
       </div>

@@ -72,7 +72,9 @@ const useCineplaceStore = create<CineplaceStore>((set, get) => ({
   createCineplace: async (data) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.post(`${API_BASE_URL}/cineplace`, data);
+      const response = await axios.post(`${API_BASE_URL}/cineplace`, data, {
+        timeout: 30000,
+      });
       const { cineplaces } = get();
       set({
         cineplaces: [...cineplaces, response.data],
