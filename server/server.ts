@@ -8,6 +8,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import cineplaceRoutes from "./routes/cineplaceRoutes.js";
 import tripplannerRoutes from "./routes/tripplannerRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 // Load environment variables before using them
 dotenv.config();
@@ -30,6 +31,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api", userRoutes);
 app.use("/api", cineplaceRoutes);
 app.use("/api/trip", tripplannerRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.listen(PORT, () => {
   console.log("Server is Running on http://localhost:" + PORT);

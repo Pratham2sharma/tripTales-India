@@ -14,6 +14,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       router.push('/login');
       return;
     }
+    
+    // Check if user has admin role
+    if ((session.user as any)?.role !== 'admin') {
+      router.push('/login');
+      return;
+    }
   }, [session, status, router]);
 
   if (status === 'loading') {
@@ -24,7 +30,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!session) {
+  if (!session || (session.user as any)?.role !== 'admin') {
     return null;
   }
 

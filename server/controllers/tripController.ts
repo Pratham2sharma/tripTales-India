@@ -1,9 +1,16 @@
 import { Request, Response } from "express";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import User from "../models/User";
 dotenv.config();
 
 const openai = new OpenAI();
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
 
 interface TripRequestBody {
   budget: number;
@@ -22,8 +29,36 @@ interface TripResponse {
   itineraries: Itinerary[];
 }
 
-export const plantrip = async (req: Request, res: Response) => {
+export const plantrip = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    // ++ PAYWALL LOGIC START ++
+    // 1. Get user from database
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required." });
+    }
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // 2. Check user's access rights
+    const hasFreePlansLeft = user.planGeneratedCount < 5;
+    const isPremiumActive =
+      user.subscription.plan === "premium" &&
+      user.subscription.expiresAt &&
+      user.subscription.expiresAt > new Date();
+
+    // 3. If user does NOT have access, block them.
+    if (!hasFreePlansLeft && !isPremiumActive) {
+      return res.status(402).json({
+        error:
+          "You have used all your free trip plans. Please subscribe for unlimited access.",
+      });
+    }
+    // ++ PAYWALL LOGIC END ++
+
     const { budget, people, destination, duration } =
       req.body as TripRequestBody;
 
@@ -87,7 +122,21 @@ export const plantrip = async (req: Request, res: Response) => {
 
     try {
       const itineraries: TripResponse = JSON.parse(rawContent);
-      res.json(itineraries);
+      // ++ INCREMENT FREE PLAN COUNTER BEFORE RESPONDING ++
+      // 4. If the trip was generated using a free plan, update the count.
+      if (hasFreePlansLeft && !isPremiumActive) {
+        user.planGeneratedCount += 1;
+        await user.save();
+      }
+
+      res.json({
+        ...itineraries,
+        // Optionally send back the remaining plan count to the frontend
+        remainingPlans: isPremiumActive
+          ? "Unlimited"
+          : 5 - user.planGeneratedCount,
+      });
+      // ++ END INCREMENT LOGIC ++
     } catch (error) {
       console.error(
         "Final JSON Parse Error (should not happen with JSON mode):",

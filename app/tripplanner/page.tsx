@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,9 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { UpgradeModal } from "../components/UpgradeModal";
+import { useRouter } from "next/navigation";
+import SubscriptionStatus from "../components/SubscriptionStatus";
 
 export default function TripPlannerPage() {
   const [formData, setFormData] = useState({
@@ -17,12 +21,41 @@ export default function TripPlannerPage() {
     duration: "",
   });
 
-  const { generateTripPlan, tripPlan, loading, error } = useTripPlannerStore();
+  const router = useRouter(); // ++ INITIALIZE THE ROUTER
 
+  // ++ GET NEW STATE & ACTIONS FROM THE STORE ++
+  const {
+    generateTripPlan,
+    tripPlan,
+    loading,
+    error,
+    isPaywallHit,
+    resetPaywall,
+  } = useTripPlannerStore();
+
+  const { data: session, status } = useSession();
   const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    const fetchUserData = async () => {
+      if (session?.user) {
+        try {
+          const response = await fetch("/api/user/profile");
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [session]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -82,6 +115,13 @@ export default function TripPlannerPage() {
 
   return (
     <div className="bg-white min-h-screen">
+      {/* ++ RENDER THE MODAL WHEN THE PAYWALL IS HIT ++ */}
+      {mounted && isPaywallHit && (
+        <UpgradeModal
+          onClose={resetPaywall}
+          onUpgrade={() => router.push("/subscription")}
+        />
+      )}
       <Navbar />
 
       {/* Hero Section */}
@@ -119,6 +159,11 @@ export default function TripPlannerPage() {
                   Plan Your Trip
                 </h2>
 
+                {mounted && user && (
+                  <div className="mb-6">
+                    <SubscriptionStatus user={user} />
+                  </div>
+                )}
                 {mounted && (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
@@ -194,7 +239,7 @@ export default function TripPlannerPage() {
                   </form>
                 )}
 
-                {mounted && error && (
+                {mounted && error && !isPaywallHit && (
                   <p className="text-red-500 mt-4 text-center">{error}</p>
                 )}
 
