@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import User from "../models/User";
+import redis from "../lib/redis";
 dotenv.config();
 
 const openai = new OpenAI();
@@ -31,26 +32,60 @@ interface TripResponse {
 
 export const plantrip = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // ++ PAYWALL LOGIC START ++
-    // 1. Get user from database
-    const userId = req.headers['x-user-id'] as string;
+    const { budget, people, destination, duration } =
+      req.body as TripRequestBody;
+
+    const userId = req.headers["x-user-id"] as string;
     if (!userId) {
       return res.status(401).json({ error: "Authentication required." });
     }
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // 2. Check user's access rights
+    // 1. Create a unique and consistent cache key
+    const normalizedDestination = destination
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+    // "Bucket" the budget to increase cache hits
+    const budgetBucket = Math.floor(budget / 5000) * 5000;
+    const cacheKey = `trip-plan:${normalizedDestination}:${duration}d:${people}p:${budgetBucket}inr`;
+
+    // 2. Check the cache first
+    const cachedPlan = await redis.get(cacheKey);
+
+    if (cachedPlan) {
+      console.log(`Cache HIT for ${cacheKey}!`);
+      const parsedPlan = typeof cachedPlan === 'string' 
+        ? JSON.parse(cachedPlan) 
+        : cachedPlan;
+      const isPremiumActive =
+        user?.subscription.plan === "premium" &&
+        user.subscription.expiresAt &&
+        user.subscription.expiresAt > new Date();
+
+      // We still need to send back the user's current remaining plan count
+      return res.json({
+        ...parsedPlan,
+        remainingPlans: isPremiumActive
+          ? "Unlimited"
+          : 5 - (user?.planGeneratedCount || 0),
+        servedFromCache: true, // Optional: for debugging
+      });
+    }
+
+    // 3. CACHE MISS: If not in cache, proceed with paywall and AI generation
+    console.log(`Cache MISS for ${cacheKey}. Checking access and calling API.`);
+
+    // ++ PAYWALL LOGIC (NOW INSIDE CACHE MISS) ++
+
     const hasFreePlansLeft = user.planGeneratedCount < 5;
     const isPremiumActive =
       user.subscription.plan === "premium" &&
       user.subscription.expiresAt &&
       user.subscription.expiresAt > new Date();
 
-    // 3. If user does NOT have access, block them.
     if (!hasFreePlansLeft && !isPremiumActive) {
       return res.status(402).json({
         error:
@@ -58,9 +93,6 @@ export const plantrip = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
     // ++ PAYWALL LOGIC END ++
-
-    const { budget, people, destination, duration } =
-      req.body as TripRequestBody;
 
     // 3. The prompt can be slightly simplified as JSON formatting is now guaranteed
     const prompt = `
@@ -119,6 +151,10 @@ export const plantrip = async (req: AuthenticatedRequest, res: Response) => {
     if (!rawContent) {
       return res.status(500).json({ error: "API returned empty content." });
     }
+
+    // 4. Store the NEW result in the cache for 30 days
+    await redis.set(cacheKey, rawContent, { ex: 2592000 }); // 30 days in seconds
+    console.log(`SUCCESS: New plan for ${cacheKey} stored in cache.`);
 
     try {
       const itineraries: TripResponse = JSON.parse(rawContent);

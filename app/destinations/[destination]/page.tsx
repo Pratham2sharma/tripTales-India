@@ -26,7 +26,6 @@ interface Destination {
   longitude: number;
 }
 
-
 // Dynamically import the map component outside of the main function
 const Map = dynamic(() => import("../../components/MapComponent"), {
   ssr: false,
@@ -95,7 +94,7 @@ export default function DestinationPage() {
               Destination Not Found
             </h1>
             <p className="text-gray-600">
-              The destination you're looking for doesn't exist.
+              The destination you&apos;re looking for doesn&apos;t exist.
             </p>
           </div>
         </div>

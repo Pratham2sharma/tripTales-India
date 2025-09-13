@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import cloudinary from "../lib/cloudinary";
 import Cineplace from "../models/Cineplace";
+import redis from "../lib/redis.js";
 
 export const createCineplace = async (req: Request, res: Response) => {
   try {
@@ -73,8 +74,25 @@ export const createCineplace = async (req: Request, res: Response) => {
 };
 
 export const getAllCineplace = async (req: Request, res: Response) => {
+  const cacheKey = "all_cineplaces";
+
   try {
+    const cachedCineplaces = await redis.get(cacheKey);
+
+    if (cachedCineplaces) {
+      console.log("Cache HIT for all_cineplaces!");
+      const parsedCineplaces =
+        typeof cachedCineplaces === "string"
+          ? JSON.parse(cachedCineplaces)
+          : cachedCineplaces;
+      return res.status(200).json(parsedCineplaces);
+    }
+
+    console.log("Cache MISS for all_cineplaces. Fetching from DB.");
     const cineplaces = await Cineplace.find();
+
+    await redis.set(cacheKey, JSON.stringify(cineplaces), { ex: 43200 });
+
     res.status(200).json(cineplaces);
   } catch (error: any) {
     console.log("Error in getAllCineplace controller", error.message);
@@ -83,11 +101,30 @@ export const getAllCineplace = async (req: Request, res: Response) => {
 };
 
 export const getCineplaceById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const cacheKey = `cineplace:${id}`;
+
   try {
-    const cineplace = await Cineplace.findById(req.params.id);
+    const cachedCineplace = await redis.get(cacheKey);
+
+    if (cachedCineplace) {
+      console.log(`Cache HIT for ${cacheKey}!`);
+      const parsedCineplace =
+        typeof cachedCineplace === "string"
+          ? JSON.parse(cachedCineplace)
+          : cachedCineplace;
+      return res.status(200).json(parsedCineplace);
+    }
+
+    console.log(`Cache MISS for ${cacheKey}. Fetching from DB.`);
+    const cineplace = await Cineplace.findById(id);
+
     if (!cineplace) {
       return res.status(404).json({ message: "Cineplace not found" });
     }
+
+    await redis.set(cacheKey, JSON.stringify(cineplace), { ex: 3600 });
+
     res.status(200).json(cineplace);
   } catch (error: any) {
     console.log("Error in getCineplaceById controller", error.message);

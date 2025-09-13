@@ -86,7 +86,7 @@ export default function CineplacePage() {
               Location Not Found
             </h1>
             <p className="text-gray-400">
-              The cinematic location you're looking for doesn't exist.
+              The cinematic location you&apos;re looking for doesn&apos;t exist.
             </p>
           </div>
         </div>
