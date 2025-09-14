@@ -7,10 +7,12 @@ import DestinationGrid from "../components/DestinationGrid";
 import Pagination from "../components/Pagination"; // <-- Import Pagination
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Spinner from "../components/Spinner";
 
 const DESTINATIONS_PER_PAGE = 9; // <-- Define how many items per page
 
 const FilterPage = () => {
+  const [pageLoading, setPageLoading] = useState(true);
   const { destinations, loading, error, fetchDestinations } =
     useDestinationStore();
 
@@ -21,6 +23,13 @@ const FilterPage = () => {
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     fetchDestinations();
@@ -63,6 +72,14 @@ const FilterPage = () => {
     indexOfFirstDestination,
     indexOfLastDestination
   );
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Spinner />
+      </div>
+    );
+  }
 
   if (loading) return <p>Loading destinations...</p>;
   if (error) return <p>Error loading destinations: {error}</p>;

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Spinner from "../components/Spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTripPlannerStore } from "@/store/tripplaanerStore";
 import Image from "next/image";
@@ -14,6 +15,7 @@ import { useRouter } from "next/navigation";
 import SubscriptionStatus from "../components/SubscriptionStatus";
 
 export default function TripPlannerPage() {
+  const [pageLoading, setPageLoading] = useState(true);
   const [formData, setFormData] = useState({
     people: "",
     destination: "",
@@ -36,6 +38,13 @@ export default function TripPlannerPage() {
   const { data: session, status } = useSession();
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -112,6 +121,14 @@ export default function TripPlannerPage() {
     );
     pdf.save("trip-plan.pdf");
   };
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white min-h-screen">

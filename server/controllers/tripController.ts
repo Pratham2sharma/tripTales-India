@@ -57,9 +57,8 @@ export const plantrip = async (req: AuthenticatedRequest, res: Response) => {
 
     if (cachedPlan) {
       console.log(`Cache HIT for ${cacheKey}!`);
-      const parsedPlan = typeof cachedPlan === 'string' 
-        ? JSON.parse(cachedPlan) 
-        : cachedPlan;
+      const parsedPlan =
+        typeof cachedPlan === "string" ? JSON.parse(cachedPlan) : cachedPlan;
       const isPremiumActive =
         user?.subscription.plan === "premium" &&
         user.subscription.expiresAt &&

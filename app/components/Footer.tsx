@@ -129,16 +129,13 @@ const Footer = () => {
               <div className="flex items-start">
                 <span className="text-orange-400 mr-2">📍</span>
                 <p className="text-gray-300 text-sm">
-                  123 Travel Street, New Delhi, India 110001
+                  Vadodara, Gujarat , India 390019
                 </p>
               </div>
-              <div className="flex items-center">
-                <span className="text-orange-400 mr-2">📞</span>
-                <p className="text-gray-300 text-sm">+91 98765 43210</p>
-              </div>
+
               <div className="flex items-center">
                 <span className="text-orange-400 mr-2">✉️</span>
-                <p className="text-gray-300 text-sm">info@triptalesindia.com</p>
+                <p className="text-gray-300 text-sm">triptales02@gmail.com</p>
               </div>
               <div className="flex space-x-4 mt-4">
                 <a

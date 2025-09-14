@@ -1,9 +1,29 @@
+"use client";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Spinner from "../components/Spinner";
 import Link from "next/link";
 
 export default function AboutPage() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white min-h-screen">
       <Navbar />

@@ -1,10 +1,12 @@
 "use client";
 import { useSession, signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import Footer from "./components/Footer";
+import Spinner from "./components/Spinner";
 
 const indianStates = [
   { name: "Andhra Pradesh", image: "/images/Andhra-Pradesh.png" },
@@ -40,10 +42,28 @@ const indianStates = [
 ];
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
+    
     <div className="bg-white min-h-screen">
       <Navbar />
-
+      
       <div className="relative w-full h-[90vh]">
         <video
           className="w-full h-full object-cover"

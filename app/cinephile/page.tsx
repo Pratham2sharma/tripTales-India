@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Spinner from "../components/Spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import useCineplaceStore from "@/store/cineplaceStore";
 import Pagination from "../components/Pagination";
@@ -22,8 +23,17 @@ interface Cineplace {
 const ITEMS_PER_PAGE = 6;
 
 export default function CinephilePage() {
+  const [pageLoading, setPageLoading] = useState(true);
   const { cineplaces, loading, error, fetchCineplaces } = useCineplaceStore();
   const [currentPage, setCurrentPage] = useState(1);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+  
   useEffect(() => {
     fetchCineplaces();
   }, [fetchCineplaces]);
@@ -35,6 +45,14 @@ export default function CinephilePage() {
     indexOfFirstItem,
     indexOfLastItem
   );
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black min-h-screen text-white">
       <Navbar />

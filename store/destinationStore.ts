@@ -54,11 +54,21 @@ const useDestinationStore = create<DestinationStore>((set, get) => ({
   fetchDestinations: async () => {
     set({ loading: true, error: null });
     try {
+      console.log(
+        "Fetching destinations from:",
+        `${API_BASE_URL}/destinations`
+      );
       const response = await axios.get(`${API_BASE_URL}/destinations`);
+      console.log("Destinations fetched successfully:", response.data);
       set({ destinations: response.data, loading: false });
     } catch (error: any) {
+      console.error("Error fetching destinations:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to fetch destinations";
       set({
-        error: error.response?.data?.message || error.message,
+        error: errorMessage,
         loading: false,
       });
     }

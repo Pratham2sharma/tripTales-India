@@ -1,11 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
+import Spinner from "../components/Spinner";
+import { contactStore } from "../../store/contactStore";
 
 export default function ContactPage() {
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,6 +16,8 @@ export default function ContactPage() {
     subject: "",
     message: "",
   });
+
+  const { status, error, sendContactForm, resetStatus } = contactStore();
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -26,12 +31,39 @@ export default function ContactPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Contact Form Data:", formData);
-    alert("Thank you for your message! We'll get back to you soon.");
-    setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+    await sendContactForm(formData);
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (status === "success") {
+      // Clear the form fields
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+
+      // Optional: Reset the status message after 5 seconds
+      const timer = setTimeout(() => {
+        resetStatus();
+      }, 5000);
+
+      return () => clearTimeout(timer); // Cleanup timer on component unmount
+    }
+  }, [status, resetStatus]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white min-h-screen">
@@ -72,7 +104,7 @@ export default function ContactPage() {
                     Send us a Message
                   </h2>
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6" suppressHydrationWarning={true}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -131,7 +163,6 @@ export default function ContactPage() {
                         >
                           <option value="">Select a subject</option>
                           <option value="general">General Inquiry</option>
-                          <option value="booking">Booking Support</option>
                           <option value="feedback">Feedback</option>
                           <option value="partnership">Partnership</option>
                           <option value="technical">Technical Issue</option>
@@ -156,10 +187,23 @@ export default function ContactPage() {
 
                     <button
                       type="submit"
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105"
+                      // UPDATED: Button state is now driven by the store
+                      disabled={status === "loading"}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-700 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Send Message
+                      {status === "loading" ? "Sending..." : "Send Message"}
                     </button>
+                    {/* ADDED: Dynamic feedback messages based on store state */}
+                    {status === "success" && (
+                      <p className="text-center font-semibold text-green-500">
+                        Message sent successfully! We&apos;ll be in touch.
+                      </p>
+                    )}
+                    {status === "error" && (
+                      <p className="text-center font-semibold text-red-500">
+                        {error}
+                      </p>
+                    )}
                   </form>
                 </CardContent>
               </Card>
@@ -187,11 +231,7 @@ export default function ContactPage() {
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">
                           Email Us
                         </h3>
-                        <p className="text-gray-600">
-                          info@triptalesindia.com
-                          <br />
-                          support@triptalesindia.com
-                        </p>
+                        <p className="text-gray-600">triptales02@gmail.com</p>
                       </div>
                     </div>
                   </CardContent>

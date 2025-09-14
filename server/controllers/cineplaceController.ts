@@ -3,8 +3,22 @@ import cloudinary from "../lib/cloudinary";
 import Cineplace from "../models/Cineplace";
 import redis from "../lib/redis.js";
 
+interface ICineplace {
+  name: string;
+  description: string;
+  movie: string;
+  images: string[];
+  state: string;
+  bestTimeToVisit: string[];
+  travelTips: string[];
+  averageBudget: number;
+  latitude: number;
+  longitude: number;
+}
+
 export const createCineplace = async (req: Request, res: Response) => {
   try {
+    // CHANGED: Use the ICineplace interface to type req.body
     const {
       name,
       description,
@@ -16,7 +30,7 @@ export const createCineplace = async (req: Request, res: Response) => {
       averageBudget,
       latitude,
       longitude,
-    } = req.body;
+    } = req.body as ICineplace;
 
     if (
       !name ||
@@ -33,7 +47,7 @@ export const createCineplace = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    let uploadedImageUrls: string[] = [];
+    const uploadedImageUrls: string[] = [];
 
     if (images && Array.isArray(images) && images.length > 0) {
       for (const img of images) {
@@ -41,14 +55,17 @@ export const createCineplace = async (req: Request, res: Response) => {
           if (!img || typeof img !== "string") {
             continue;
           }
-
           const uploadRes = await cloudinary.uploader.upload(img, {
             folder: "cineplaces",
             resource_type: "auto",
           });
           uploadedImageUrls.push(uploadRes.secure_url);
-        } catch (cloudinaryError: any) {
-          console.log("Cloudinary upload error:", cloudinaryError.message);
+        } catch (cloudinaryError: unknown) {
+          if (cloudinaryError instanceof Error) {
+            console.log("Cloudinary upload error:", cloudinaryError.message);
+          } else {
+            console.log("An unknown Cloudinary upload error occurred");
+          }
         }
       }
     }
@@ -65,11 +82,19 @@ export const createCineplace = async (req: Request, res: Response) => {
       latitude,
       longitude,
     });
-
+    // --- CACHE INVALIDATION ---
+    console.log("Invalidating all_cineplaces cache after creation...");
+    await redis.del("all_cineplaces");
+    // --- END CACHE INVALIDATION ---
     res.status(201).json(cineplace);
-  } catch (error: any) {
-    console.log("Error in createCineplace controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    // CHANGED: from 'any' to 'unknown'
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in createCineplace controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -94,9 +119,13 @@ export const getAllCineplace = async (req: Request, res: Response) => {
     await redis.set(cacheKey, JSON.stringify(cineplaces), { ex: 43200 });
 
     res.status(200).json(cineplaces);
-  } catch (error: any) {
-    console.log("Error in getAllCineplace controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in getAllCineplace controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -126,14 +155,19 @@ export const getCineplaceById = async (req: Request, res: Response) => {
     await redis.set(cacheKey, JSON.stringify(cineplace), { ex: 3600 });
 
     res.status(200).json(cineplace);
-  } catch (error: any) {
-    console.log("Error in getCineplaceById controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in getCineplaceById controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
 export const updateCineplace = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
     const {
       name,
       description,
@@ -145,7 +179,7 @@ export const updateCineplace = async (req: Request, res: Response) => {
       averageBudget,
       latitude,
       longitude,
-    } = req.body;
+    } = req.body as Partial<ICineplace>;
 
     let uploadedImageUrls: string[] = [];
 
@@ -159,14 +193,15 @@ export const updateCineplace = async (req: Request, res: Response) => {
             resource_type: "auto",
           });
           uploadedImageUrls.push(uploadRes.secure_url);
-        } catch (cloudinaryError: any) {
-          console.log("Cloudinary upload error:", cloudinaryError.message);
+        } catch (cloudinaryError: unknown) {
+          if (cloudinaryError instanceof Error) {
+            console.log("Cloudinary upload error:", cloudinaryError.message);
+          }
         }
       }
     }
 
-    // Ensure latitude and longitude are numbers if sent as strings
-    const updateData: any = {
+    const updateData: Partial<ICineplace> = {
       name,
       description,
       movie,
@@ -174,18 +209,23 @@ export const updateCineplace = async (req: Request, res: Response) => {
       bestTimeToVisit,
       travelTips,
       averageBudget,
-      latitude: latitude !== undefined ? Number(latitude) : undefined,
-      longitude: longitude !== undefined ? Number(longitude) : undefined,
     };
 
-    // Remove undefined fields so they don't overwrite with undefined
-    Object.keys(updateData).forEach(
-      (key) => updateData[key] === undefined && delete updateData[key]
-    );
+    // Handle numeric fields carefully
+    if (latitude !== undefined) updateData.latitude = Number(latitude);
+    if (longitude !== undefined) updateData.longitude = Number(longitude);
 
+    // Only update images if new ones were uploaded
     if (uploadedImageUrls.length > 0) {
       updateData.images = uploadedImageUrls;
     }
+
+    // Remove undefined fields so they don't overwrite with undefined
+    Object.keys(updateData).forEach(
+      (key) =>
+        (updateData as any)[key] === undefined &&
+        delete (updateData as any)[key]
+    );
 
     const cineplace = await Cineplace.findByIdAndUpdate(
       req.params.id,
@@ -197,15 +237,27 @@ export const updateCineplace = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Cineplace not found" });
     }
 
+    // --- CACHE INVALIDATION ---
+    // After successfully updating the DB, delete the old cache entries.
+    console.log(`Invalidating cache for cineplace:${id} and all_cineplaces`);
+    await redis.del(`cineplace:${id}`);
+    await redis.del("all_cineplaces");
+    // --- END CACHE INVALIDATION ---
+
     res.status(200).json(cineplace);
-  } catch (error: any) {
-    console.log("Error in updateCineplace controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in updateCineplace controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
 export const deleteCineplace = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
     const cineplace = await Cineplace.findById(req.params.id);
 
     if (!cineplace) {
@@ -227,9 +279,19 @@ export const deleteCineplace = async (req: Request, res: Response) => {
     }
 
     await Cineplace.findByIdAndDelete(req.params.id);
+    // --- CACHE INVALIDATION ---
+    // After successfully deleting from the DB, delete the cache entries.
+    console.log(`Invalidating cache for cineplace:${id} and all_cineplaces`);
+    await redis.del(`cineplace:${id}`);
+    await redis.del("all_cineplaces");
+    // --- END CACHE INVALIDATION ---
     res.json({ message: "Cineplace deleted successfully" });
-  } catch (error: any) {
-    console.log("Error in deleteCineplace controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in deleteCineplace controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };

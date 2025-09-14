@@ -1,9 +1,8 @@
-import express from 'express';
+import express from "express";
+import { getAnalytics } from "../controllers/userController.js";
 
 const router = express.Router();
 
-// Admin routes will be added here
-// router.get('/users', getUsersController);
-// router.post('/admins', createAdminController);
+router.get("/analytics", getAnalytics);
 
 export default router;

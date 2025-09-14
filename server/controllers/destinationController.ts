@@ -51,8 +51,12 @@ export const createDestination = async (req: Request, res: Response) => {
             resource_type: "auto",
           });
           uploadedImageUrls.push(uploadRes.secure_url);
-        } catch (cloudinaryError: any) {
-          console.log("Cloudinary upload error:", cloudinaryError.message);
+        } catch (cloudinaryError: unknown) {
+          if (cloudinaryError instanceof Error) {
+            console.log("Cloudinary upload error:", cloudinaryError.message);
+          } else {
+            console.log("An unknown Cloudinary upload error occurred");
+          }
           // Continue with other images instead of failing completely
         }
       }
@@ -70,10 +74,23 @@ export const createDestination = async (req: Request, res: Response) => {
       longitude,
     });
 
+    // --- COMPLETE CACHE INVALIDATION ---
+    console.log("Invalidating caches after creation...");
+    await Promise.all([
+      redis.del("all_destinations"),
+      redis.del("basic_destinations"),
+      redis.del(`destinations_by_state:${state.toLowerCase().trim()}`),
+    ]);
+    // --- END CACHE INVALIDATION ---
+
     res.status(201).json(destination);
-  } catch (error: any) {
-    console.log("Error in createDestination controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in createDestination controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -101,10 +118,26 @@ export const deleteDestination = async (req: Request, res: Response) => {
     }
 
     await Destination.findByIdAndDelete(req.params.id);
+    // --- COMPLETE CACHE INVALIDATION ---
+    console.log(`Invalidating caches after deletion...`);
+    await Promise.all([
+      redis.del(`destination:${req.params.id}`),
+      redis.del("all_destinations"),
+      redis.del("basic_destinations"),
+      redis.del(
+        `destinations_by_state:${destination.state.toLowerCase().trim()}`
+      ),
+    ]);
+    // --- END CACHE INVALIDATION ---
+
     res.json({ message: "Destination Deleted Successfully" });
-  } catch (error: any) {
-    console.log("Error in deleteDestination controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in deleteDestination controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -135,9 +168,13 @@ export const getAllDestinations = async (req: Request, res: Response) => {
 
     // Send the fresh data
     res.status(200).json(destinations);
-  } catch (error: any) {
-    console.log("Error in getAllDestinations controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in getAllDestinations controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -161,9 +198,13 @@ export const getBasicDestinations = async (req: Request, res: Response) => {
     await redis.set(cacheKey, JSON.stringify(destinations), { ex: 43200 });
 
     res.status(200).json(destinations);
-  } catch (error: any) {
-    console.log("Error in getBasicDestinations controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in getBasicDestinations controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -195,14 +236,19 @@ export const getDestinationById = async (req: Request, res: Response) => {
     await redis.set(cacheKey, JSON.stringify(destination), { ex: 3600 });
 
     res.status(200).json(destination);
-  } catch (error: any) {
-    console.log("Error in getDestinationById controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in getDestinationById controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
 export const updateDestination = async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
     const {
       name,
       description,
@@ -214,7 +260,10 @@ export const updateDestination = async (req: Request, res: Response) => {
       latitude,
       longitude,
     } = req.body;
-
+    const originalDestination = await Destination.findById(id);
+    if (!originalDestination) {
+      return res.status(404).json({ message: "Destination not found" });
+    }
     let uploadedImageUrls: string[] = [];
 
     if (images && Array.isArray(images) && images.length > 0) {
@@ -227,8 +276,10 @@ export const updateDestination = async (req: Request, res: Response) => {
             resource_type: "auto",
           });
           uploadedImageUrls.push(uploadRes.secure_url);
-        } catch (cloudinaryError: any) {
-          console.log("Cloudinary upload error:", cloudinaryError.message);
+        } catch (cloudinaryError: unknown) {
+          if (cloudinaryError instanceof Error) {
+            console.log("Cloudinary upload error:", cloudinaryError.message);
+          }
         }
       }
     }
@@ -258,10 +309,31 @@ export const updateDestination = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Destination not found" });
     }
 
+    // 3. --- COMPLETE CACHE INVALIDATION ---
+    console.log(`Invalidating caches for destination ID: ${id}`);
+    const cacheKeysToDel = [
+      `destination:${id}`,
+      "all_destinations",
+      "basic_destinations",
+      `destinations_by_state:${originalDestination.state.toLowerCase().trim()}`, // Invalidate the OLD state cache
+    ];
+    // If the state was changed, invalidate the NEW state's cache as well
+    if (destination && destination.state !== originalDestination.state) {
+      cacheKeysToDel.push(
+        `destinations_by_state:${destination.state.toLowerCase().trim()}`
+      );
+    }
+    await Promise.all(cacheKeysToDel.map((key) => redis.del(key)));
+    // --- END CACHE INVALIDATION ---
+
     res.status(200).json(destination);
-  } catch (error: any) {
-    console.log("Error in updateDestination controller", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.log("Error in updateDestination controller", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
@@ -304,8 +376,12 @@ export const getDestinationsByState = async (req: Request, res: Response) => {
     await redis.set(cacheKey, JSON.stringify(destinations), { ex: 43200 });
 
     res.status(200).json(destinations);
-  } catch (error: any) {
-    console.error("Error fetching destinations by state:", error.message);
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (error: unknown) {
+    let errorMessage = "Server error";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    console.error("Error fetching destinations by state:", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
