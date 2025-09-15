@@ -43,7 +43,7 @@ const indianStates = [
   "Lakshadweep",
 ];
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6;
 
 const CineplaceManager = () => {
   const [showForm, setShowForm] = useState(false);
@@ -106,6 +106,7 @@ const CineplaceManager = () => {
     try {
       await createCineplace(createData);
       setShowForm(false);
+      setCurrentPage(1); // Reset to first page
       setFormData({
         name: "",
         description: "",
@@ -166,19 +167,33 @@ const CineplaceManager = () => {
     if (confirm("Are you sure you want to delete this cineplace?")) {
       try {
         await deleteCineplace(id);
+        // Reset to page 1 if current page becomes empty
+        const newTotal = cineplaces.length - 1;
+        const newTotalPages = Math.ceil(newTotal / ITEMS_PER_PAGE);
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          setCurrentPage(newTotalPages);
+        }
       } catch (error) {
         console.error("Error deleting cineplace:", error);
       }
     }
   };
 
-  // 4. Pagination logic: Calculate which destinations to show on the current page
+  // Pagination logic
+  const totalPages = Math.ceil(cineplaces.length / ITEMS_PER_PAGE);
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
   const currentDestinations = cineplaces.slice(
     indexOfFirstItem,
     indexOfLastItem
   );
+
+  // Reset to page 1 if current page is invalid
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   return (
     <div>
@@ -362,63 +377,65 @@ const CineplaceManager = () => {
           ) : (
             <>
               {viewMode === "list" && (
-                <div className="space-y-4">
-                  {cineplaces.map((cineplace) => (
-                    <div
-                      key={cineplace._id}
-                      className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-black mb-2">
-                            {cineplace.name}
-                          </h3>
-                          <p className="text-black text-sm mb-1">
-                            <strong>Movie:</strong> {cineplace.movie}
-                          </p>
-                          <p className="text-black text-sm mb-3">
-                            {cineplace.description}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            onClick={() => {
-                              fetchCineplaceById(cineplace._id);
-                              setViewMode("view");
-                            }}
-                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={() => {
-                              fetchCineplaceById(cineplace._id);
-                              setEditingId(cineplace._id);
-                              setViewMode("edit");
-                            }}
-                            className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(cineplace._id)}
-                            className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                          >
-                            Delete
-                          </button>
+                <>
+                  <div className="space-y-4">
+                    {currentDestinations.map((cineplace) => (
+                      <div
+                        key={cineplace._id}
+                        className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-black mb-2">
+                              {cineplace.name}
+                            </h3>
+                            <p className="text-black text-sm mb-1">
+                              <strong>Movie:</strong> {cineplace.movie}
+                            </p>
+                            <p className="text-black text-sm mb-3">
+                              {cineplace.description}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => {
+                                fetchCineplaceById(cineplace._id);
+                                setViewMode("view");
+                              }}
+                              className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => {
+                                fetchCineplaceById(cineplace._id);
+                                setEditingId(cineplace._id);
+                                setViewMode("edit");
+                              }}
+                              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(cineplace._id)}
+                              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
 
-              <Pagination
-                totalDestinations={cineplaces.length}
-                destinationsPerPage={ITEMS_PER_PAGE}
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-              />
+                  <Pagination
+                    totalDestinations={cineplaces.length}
+                    destinationsPerPage={ITEMS_PER_PAGE}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                  />
+                </>
+              )}
 
               {viewMode === "view" && selectedCineplace && (
                 <div className="bg-white rounded-lg p-6">

@@ -92,7 +92,13 @@ const useCineplaceStore = create<CineplaceStore>((set, get) => ({
   updateCineplace: async (id: string, data) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.put(`${API_BASE_URL}/cineplace/${id}`, data);
+      const response = await axios.put(
+        `${API_BASE_URL}/cineplace/${id}`,
+        data,
+        {
+          timeout: 40000,
+        }
+      );
       const { cineplaces } = get();
       set({
         cineplaces: cineplaces.map((cineplace) =>

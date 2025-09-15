@@ -163,6 +163,24 @@ export default function CineplacePage() {
                   </Carousel>
                 </div>
               )}
+
+              {/* Tips Section */}
+              <div className="px-12 mt-8">
+                <div className="bg-gradient-to-br from-purple-900 to-purple-700 p-6 rounded-lg border border-purple-500 max-w-4xl">
+                  <h3 className="text-2xl font-bold text-yellow-400 mb-4 flex items-center">
+                    💡 Cinephile Tips
+                  </h3>
+                  <ul className="text-white space-y-2 list-disc list-outside ml-6">
+                    {cineplace.travelTips?.split(".").map((tip, index) =>
+                      tip.trim() ? (
+                        <li key={index}>
+                          {tip.trim()}
+                        </li>
+                      ) : null
+                    )}
+                  </ul>
+                </div>
+              </div>
             </div>
 
             {/* Sidebar */}
@@ -198,19 +216,6 @@ export default function CineplacePage() {
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-900 to-purple-700 p-6 rounded-lg border border-purple-500">
-                <h3 className="text-2xl font-bold text-yellow-400 mb-4 flex items-center">
-                  💡 Cinephile Tips
-                </h3>
-                <p className="text-white">
-                  {cineplace.travelTips
-                    ?.split(".")
-                    .map((tip, index) =>
-                      tip.trim() ? <li key={index}>{tip.trim()}</li> : null
-                    )}
-                </p>
-              </div>
-
               {/* Action Button
               <div className="bg-gradient-to-r from-yellow-500 to-red-500 p-6 rounded-lg text-center">
                 <h3 className="text-xl font-bold text-black mb-4">Ready for Your Movie Scene?</h3>
@@ -228,6 +233,7 @@ export default function CineplacePage() {
             </h2>
             <div className="rounded-lg overflow-hidden shadow-lg border">
               <Map
+                key={`${cineplace._id}-${cineplace.latitude}-${cineplace.longitude}`}
                 lat={cineplace.latitude}
                 lng={cineplace.longitude}
                 title={cineplace.name}
@@ -235,22 +241,6 @@ export default function CineplacePage() {
               />
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Call to Action */}
-      <section className="py-16 bg-gradient-to-r from-red-900 to-purple-900">
-        <div className="container mx-auto px-4 text-center">
-          <h3 className="text-4xl font-bold mb-4 text-yellow-400">
-            🎬 More Cinematic Adventures Await
-          </h3>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto text-lg">
-            Discover more iconic Bollywood locations and step into your favorite
-            movie scenes.
-          </p>
-          <button className="bg-gradient-to-r from-yellow-500 to-red-500 text-black font-bold px-8 py-4 rounded-full hover:from-yellow-400 hover:to-red-400 transition-all duration-300 transform hover:scale-105 text-lg">
-            🎭 Explore More Locations
-          </button>
         </div>
       </section>
 

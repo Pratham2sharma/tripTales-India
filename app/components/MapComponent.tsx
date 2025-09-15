@@ -49,13 +49,12 @@ export default function OpenStreetMap({
   imageUrl,
   description,
 }: MapProps) {
-  // Fix: Ensure each map instance has a unique id to avoid container reuse error
-  const mapIdRef = useRef(`map-${lat}-${lng}-${Math.random()}`);
+  const mapKey = `${lat}-${lng}-${title}`;
 
   return (
-    <div id={mapIdRef.current} style={{ height: "450px", width: "100%" }}>
+    <div style={{ height: "450px", width: "100%" }}>
       <MapContainer
-        // --- 2. Use the initial, zoomed-out coordinates to first render the map ---
+        key={mapKey}
         center={INITIAL_MAP_CENTER}
         zoom={INITIAL_MAP_ZOOM}
         scrollWheelZoom={false}
